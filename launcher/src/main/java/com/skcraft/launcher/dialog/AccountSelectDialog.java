@@ -8,6 +8,7 @@ import com.skcraft.concurrency.ProgressObservable;
 import com.skcraft.concurrency.SettableProgress;
 import com.skcraft.launcher.Launcher;
 import com.skcraft.launcher.auth.*;
+import com.skcraft.launcher.auth.microsoft.NativeMicrosoftLoginHelper;
 import com.skcraft.launcher.persistence.Persistence;
 import com.skcraft.launcher.swing.LinedBoxPanel;
 import com.skcraft.launcher.swing.SwingHelper;
@@ -101,6 +102,12 @@ public class AccountSelectDialog extends JDialog {
 						SharedLocale.tr("accounts.confirmForgetTitle"));
 
 				if (confirmed) {
+					try {
+						NativeMicrosoftLoginHelper.signOut();
+					} catch (Throwable ignored) {
+						// Ignore, we don't care if it fails since it's just a cleanup
+					}
+
 					launcher.getAccounts().remove(accountList.getSelectedValue());
 				}
 			}
@@ -134,12 +141,12 @@ public class AccountSelectDialog extends JDialog {
 	}
 
 	private void attemptMicrosoftLogin() {
-		String status = SharedLocale.tr("login.microsoft.seeBrowser");
+		String status = SharedLocale.tr("login.pleaseWait");
 		SettableProgress progress = new SettableProgress(status, -1);
 
 		ListenableFuture<?> future = launcher.getExecutor().submit(() -> {
-			Session newSession = launcher.getMicrosoftLogin().login(() ->
-					progress.set(SharedLocale.tr("login.loggingInStatus"), -1));
+			Session newSession = launcher.getMicrosoftLogin()
+					.login(() -> progress.set(SharedLocale.tr("login.loggingInStatus"), -1), progress);
 
 			if (newSession != null) {
 				launcher.getAccounts().update(newSession.toSavedSession());
