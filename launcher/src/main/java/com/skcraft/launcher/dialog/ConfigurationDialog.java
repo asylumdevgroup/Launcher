@@ -108,32 +108,12 @@ public class ConfigurationDialog extends JDialog {
     }
 
     private void initComponents() {
-        javaSettingsPanel.addRow(new JLabel(SharedLocale.tr("options.jvmPath")), jvmRuntime);
-        javaSettingsPanel.addRow(new JLabel(SharedLocale.tr("options.jvmArguments")), jvmArgsText);
-        javaSettingsPanel.addRow(Box.createVerticalStrut(15));
-        javaSettingsPanel.addRow(new JLabel(SharedLocale.tr("options.64BitJavaWarning")));
-        javaSettingsPanel.addRow(new JLabel(SharedLocale.tr("options.minMemory")), minMemorySpinner);
-        javaSettingsPanel.addRow(new JLabel(SharedLocale.tr("options.maxMemory")), maxMemorySpinner);
-        javaSettingsPanel.addRow(new JLabel(SharedLocale.tr("options.permGen")), permGenSpinner);
-        SwingHelper.removeOpaqueness(javaSettingsPanel);
-        tabbedPane.addTab(SharedLocale.tr("options.javaTab"), SwingHelper.alignTabbedPane(javaSettingsPanel));
-
         gameSettingsPanel.addRow(new JLabel(SharedLocale.tr("options.windowWidth")), widthSpinner);
         gameSettingsPanel.addRow(new JLabel(SharedLocale.tr("options.windowHeight")), heightSpinner);
+        gameSettingsPanel.addRow(new JLabel(SharedLocale.tr("options.minMemory")), minMemorySpinner);
+        gameSettingsPanel.addRow(new JLabel(SharedLocale.tr("options.maxMemory")), maxMemorySpinner);
         SwingHelper.removeOpaqueness(gameSettingsPanel);
         tabbedPane.addTab(SharedLocale.tr("options.minecraftTab"), SwingHelper.alignTabbedPane(gameSettingsPanel));
-
-        proxySettingsPanel.addRow(useProxyCheck);
-        proxySettingsPanel.addRow(new JLabel(SharedLocale.tr("options.proxyHost")), proxyHostText);
-        proxySettingsPanel.addRow(new JLabel(SharedLocale.tr("options.proxyPort")), proxyPortText);
-        proxySettingsPanel.addRow(new JLabel(SharedLocale.tr("options.proxyUsername")), proxyUsernameText);
-        proxySettingsPanel.addRow(new JLabel(SharedLocale.tr("options.proxyPassword")), proxyPasswordText);
-        SwingHelper.removeOpaqueness(proxySettingsPanel);
-        tabbedPane.addTab(SharedLocale.tr("options.proxyTab"), SwingHelper.alignTabbedPane(proxySettingsPanel));
-
-        advancedPanel.addRow(new JLabel(SharedLocale.tr("options.gameKey")), gameKeyText);
-        SwingHelper.removeOpaqueness(advancedPanel);
-        tabbedPane.addTab(SharedLocale.tr("options.advancedTab"), SwingHelper.alignTabbedPane(advancedPanel));
 
         buttonsPanel.addElement(logButton);
         buttonsPanel.addElement(aboutButton);
