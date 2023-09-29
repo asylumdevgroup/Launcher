@@ -30,7 +30,7 @@ public class NativeMicrosoftLoginHelper {
       return;
     }
 
-    URL signInHelperPath = Launcher.class.getResource("microsoft-account-sign-in.exe");
+    URL signInHelperPath = Launcher.class.getResource("microsoft-account-sign-in.dll");
     File tempFile = new File(helperPath);
 
     FileUtils.copyURLToFile(signInHelperPath, tempFile);

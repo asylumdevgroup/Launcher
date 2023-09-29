@@ -30,7 +30,10 @@ public class FancyLauncher {
                     UIManager.getLookAndFeelDefaults().put("ClassLoader", FancyLauncher.class.getClassLoader());
                     UIManager.getDefaults().put("SplitPane.border", BorderFactory.createEmptyBorder());
                     System.setProperty("sun.awt.noerasebackground", "true");
-                    System.setProperty("substancelaf.windowRoundedCorners", "false");
+                    System.setProperty("substancelaf.windowRoundedCorners", "true");
+					System.setProperty("awt.useSystemAAFontSettings","on");
+					System.setProperty("Dawt.useSystemAAFontSettings","on");
+					System.setProperty("swing.aatext", "true");
                     FlatDarculaLaf.setup();
                     UIManager.put("Button.arc", 6);
                     UIManager.put("Component.arc", 6);
