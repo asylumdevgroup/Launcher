@@ -18,6 +18,13 @@ import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.logging.Level;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.File;
+import java.io.IOException;
+
+
 /**
  * Handles post-process creation during launch.
  */
@@ -43,7 +50,17 @@ public class LaunchProcessHandler implements Function<Process, ProcessConsoleFra
                 public void run() {
                     consoleFrame = new ProcessConsoleFrame(CONSOLE_NUM_LINES, true);
                     consoleFrame.setProcess(process);
-                    consoleFrame.setVisible(true);
+                    try {
+                        String configFilePath = "config.json";
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        JsonNode rootNode = objectMapper.readTree(new File(configFilePath));
+                        String logShow = rootNode.path("logShow").asText();
+                        if ("True".equalsIgnoreCase(logShow)) {
+                            consoleFrame.setVisible(true);
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     MessageLog messageLog = consoleFrame.getMessageLog();
                     messageLog.consume(process.getInputStream());
                     messageLog.consume(process.getErrorStream());

@@ -8,7 +8,6 @@ package com.skcraft.launcher.dialog;
 
 import com.skcraft.launcher.Configuration;
 import com.skcraft.launcher.Launcher;
-import com.skcraft.launcher.dialog.component.BetterComboBox;
 import com.skcraft.launcher.launch.runtime.AddJavaRuntime;
 import com.skcraft.launcher.launch.runtime.JavaRuntime;
 import com.skcraft.launcher.launch.runtime.JavaRuntimeFinder;
@@ -36,10 +35,11 @@ public class ConfigurationDialog extends JDialog {
     private final JPanel tabContainer = new JPanel(new BorderLayout());
     private final JTabbedPane tabbedPane = new JTabbedPane();
     private final FormPanel javaSettingsPanel = new FormPanel();
-    private final JComboBox<JavaRuntime> jvmRuntime = new BetterComboBox<>();
+    private final JComboBox<JavaRuntime> jvmRuntime = new JComboBox<>();
     private final JTextField jvmArgsText = new JTextField();
     private final JSpinner minMemorySpinner = new JSpinner();
     private final JSpinner maxMemorySpinner = new JSpinner();
+    public final JComboBox<String> logShow = new JComboBox<String>(new String[]{"True", "False"});
     private final JSpinner permGenSpinner = new JSpinner();
     private final FormPanel gameSettingsPanel = new FormPanel();
     private final JSpinner widthSpinner = new JSpinner();
@@ -94,16 +94,10 @@ public class ConfigurationDialog extends JDialog {
         mapper.map(jvmArgsText, "jvmArgs");
         mapper.map(minMemorySpinner, "minMemory");
         mapper.map(maxMemorySpinner, "maxMemory");
-        mapper.map(permGenSpinner, "permGen");
         mapper.map(widthSpinner, "windowWidth");
         mapper.map(heightSpinner, "windowHeight");
-        mapper.map(useProxyCheck, "proxyEnabled");
-        mapper.map(proxyHostText, "proxyHost");
-        mapper.map(proxyPortText, "proxyPort");
-        mapper.map(proxyUsernameText, "proxyUsername");
-        mapper.map(proxyPasswordText, "proxyPassword");
+        mapper.map(logShow, "logShow");
         mapper.map(gameKeyText, "gameKey");
-
         mapper.copyFromObject();
     }
 
@@ -112,6 +106,7 @@ public class ConfigurationDialog extends JDialog {
         gameSettingsPanel.addRow(new JLabel(SharedLocale.tr("options.windowHeight")), heightSpinner);
         gameSettingsPanel.addRow(new JLabel(SharedLocale.tr("options.minMemory")), minMemorySpinner);
         gameSettingsPanel.addRow(new JLabel(SharedLocale.tr("options.maxMemory")), maxMemorySpinner);
+        gameSettingsPanel.addRow(new JLabel(SharedLocale.tr("options.hideLog")), logShow);
         SwingHelper.removeOpaqueness(gameSettingsPanel);
         tabbedPane.addTab(SharedLocale.tr("options.minecraftTab"), SwingHelper.alignTabbedPane(gameSettingsPanel));
 
@@ -180,7 +175,6 @@ public class ConfigurationDialog extends JDialog {
     public void save() {
         mapper.copyFromSwing();
         config.setJavaRuntime((JavaRuntime) jvmRuntime.getSelectedItem());
-
         Persistence.commitAndForget(config);
         dispose();
     }

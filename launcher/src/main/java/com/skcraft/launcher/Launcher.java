@@ -149,7 +149,7 @@ public final class Launcher {
     public String getVersion() {
         String version = getProperties().getProperty("version");
         if (version.equals("${project.version}")) {
-            return "1.0.0-SNAPSHOT";
+            return "1.0.2-SNAPSHOT";
         }
         return version;
     }

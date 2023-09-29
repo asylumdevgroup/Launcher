@@ -2,7 +2,6 @@ package com.skcraft.launcher.dialog;
 
 import com.skcraft.launcher.Instance;
 import com.skcraft.launcher.InstanceSettings;
-import com.skcraft.launcher.dialog.component.BetterComboBox;
 import com.skcraft.launcher.launch.MemorySettings;
 import com.skcraft.launcher.launch.runtime.JavaRuntime;
 import com.skcraft.launcher.launch.runtime.JavaRuntimeFinder;
@@ -27,7 +26,7 @@ public class InstanceSettingsDialog extends JDialog {
 
 	private final JCheckBox enableCustomRuntime = new JCheckBox(SharedLocale.tr("instance.options.customJava"));
 	private final FormPanel runtimePanel = new FormPanel();
-	private final JComboBox<JavaRuntime> javaRuntimeBox = new BetterComboBox<>();
+	private final JComboBox<JavaRuntime> javaRuntimeBox = new JComboBox<>();
 	private final JTextField javaArgsBox = new JTextField();
 
 	private final LinedBoxPanel buttonsPanel = new LinedBoxPanel(true);

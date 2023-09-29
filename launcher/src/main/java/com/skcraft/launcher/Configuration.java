@@ -38,7 +38,10 @@ public class Configuration {
     private String proxyPassword;
     private String gameKey;
     private boolean serverEnabled = false;
+    private boolean hideLog = false;
     private String serverHost;
+    private String logShow = "True";
+
     private int serverPort = 25565;
 
     @Override
@@ -56,6 +59,13 @@ public class Configuration {
      */
     public void setWidowHeight(int height) {
         this.windowHeight = height;
+    }
+
+    /**
+     * Backwards compatibility for old configs with the misspelling.
+     */
+    public void setHideLog(boolean hideLog) {
+        this.hideLog = hideLog;
     }
 
     /**

@@ -62,6 +62,29 @@ public class ObjectSwingMapper {
         });
     }
 
+    
+    public void map(@NonNull final JComboBox<String> comboBox, String name) {
+        final MutatorAccessorField<String> field = getField(name, String.class);
+
+        add(new FieldMapping() {
+            @Override
+            public void copyFromObject() {
+                String value = field.get();
+                if (value != null) {
+                    comboBox.setSelectedItem(value);
+                }
+            }
+
+            @SuppressWarnings("unchecked")
+            @Override
+            public void copyFromSwing() {
+                Object selectedItem = comboBox.getSelectedItem();
+                String selectedValue = (selectedItem != null) ? selectedItem.toString() : null;
+                field.set(Strings.emptyToNull(selectedValue));
+            }
+        });
+    }
+
     public void map(@NonNull final JSpinner spinner, String name) {
         final MutatorAccessorField<Integer> field = getField(name, int.class);
 

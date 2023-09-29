@@ -13,11 +13,13 @@ repositories {
         name = 'obw maven'
         url = 'https://maven.offbeatwit.ch/repository/snapshots'
     }
+    mavenCentral()
 }
 
 dependencies {
     implementation project(path: ':launcher')
     implementation 'io.github.cottonmc.insubstantial:substance:7.3.1-SNAPSHOT'
+    implementation 'com.formdev:flatlaf:2.5'
 }
 
 shadowJar {

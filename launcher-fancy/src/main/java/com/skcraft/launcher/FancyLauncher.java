@@ -8,6 +8,8 @@ package com.skcraft.launcher;
 
 import com.google.common.base.Supplier;
 import com.skcraft.launcher.swing.SwingHelper;
+import com.skcraft.launcher.util.SharedLocale;
+import com.formdev.flatlaf.FlatDarculaLaf;
 import lombok.extern.java.Log;
 
 import javax.swing.*;
@@ -27,15 +29,17 @@ public class FancyLauncher {
                     Thread.currentThread().setContextClassLoader(FancyLauncher.class.getClassLoader());
                     UIManager.getLookAndFeelDefaults().put("ClassLoader", FancyLauncher.class.getClassLoader());
                     UIManager.getDefaults().put("SplitPane.border", BorderFactory.createEmptyBorder());
-                    JFrame.setDefaultLookAndFeelDecorated(true);
-                    JDialog.setDefaultLookAndFeelDecorated(true);
                     System.setProperty("sun.awt.noerasebackground", "true");
                     System.setProperty("substancelaf.windowRoundedCorners", "false");
-
-                    if (!SwingHelper.setLookAndFeel("com.skcraft.launcher.skin.LauncherLookAndFeel")) {
-                        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-                    }
-
+                    FlatDarculaLaf.setup();
+                    UIManager.put("Button.arc", 6);
+                    UIManager.put("Component.arc", 6);
+                    UIManager.put("ProgressBar.arc", 6);
+                    UIManager.put("TextComponent.arc", 6);
+                    UIManager.put("PopupMenu.arc", 6);
+                    System.setProperty("apple.awt.application.name", SharedLocale.tr("launcher.appTitle"));
+                    System.setProperty("apple.laf.useScreenMenuBar", "true");
+                    System.setProperty("apple.awt.application.appearance", "system");
                     Launcher launcher = Launcher.createFromArguments(args);
                     launcher.setMainWindowSupplier(new CustomWindowSupplier(launcher));
                     launcher.showLauncherWindow();
