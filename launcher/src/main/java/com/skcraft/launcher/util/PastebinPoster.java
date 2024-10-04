@@ -51,7 +51,7 @@ public class PastebinPoster {
                 conn.setConnectTimeout(CONNECT_TIMEOUT);
                 conn.setReadTimeout(READ_TIMEOUT);
                 conn.setRequestMethod("POST");
-                conn.addRequestProperty("Content-type", "application/x-www-form-urlencoded");
+                conn.addRequestProperty("Content-Type", "application/x-www-form-urlencoded");
                 conn.setInstanceFollowRedirects(false);
                 conn.setDoOutput(true);
                 out = conn.getOutputStream();
