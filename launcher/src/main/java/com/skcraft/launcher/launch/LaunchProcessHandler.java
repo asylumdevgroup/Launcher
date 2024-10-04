@@ -8,22 +8,16 @@ package com.skcraft.launcher.launch;
 
 import com.google.common.base.Function;
 import com.skcraft.launcher.Launcher;
-import com.skcraft.launcher.dialog.LauncherFrame;
 import com.skcraft.launcher.dialog.ProcessConsoleFrame;
 import com.skcraft.launcher.swing.MessageLog;
 import lombok.NonNull;
 import lombok.extern.java.Log;
 
-import javax.swing.*;
-import java.lang.reflect.InvocationTargetException;
-import java.util.logging.Level;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.io.File;
 import java.io.IOException;
-
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 
 /**
  * Handles post-process creation during launch.
@@ -38,56 +32,51 @@ public class LaunchProcessHandler implements Function<Process, ProcessConsoleFra
 
     public LaunchProcessHandler(@NonNull Launcher launcher) {
         this.launcher = launcher;
+        this.consoleFrame = new ProcessConsoleFrame(CONSOLE_NUM_LINES, true);
     }
 
     @Override
     public ProcessConsoleFrame apply(final Process process) {
         log.info("Watching process " + process);
-
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    consoleFrame = new ProcessConsoleFrame(CONSOLE_NUM_LINES, true);
-                    consoleFrame.setProcess(process);
-                    try {
-                        String configFilePath = "config.json";
-                        ObjectMapper objectMapper = new ObjectMapper();
-                        JsonNode rootNode = objectMapper.readTree(new File(configFilePath));
-                        String logShow = rootNode.path("logShow").asText();
-                        if ("True".equalsIgnoreCase(logShow)) {
-                            consoleFrame.setVisible(true);
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    MessageLog messageLog = consoleFrame.getMessageLog();
-                    messageLog.consume(process.getInputStream());
-                    messageLog.consume(process.getErrorStream());
+    
+        MessageLog messageLog = consoleFrame.getMessageLog();
+    
+        // Create piped streams to combine output and error streams
+        PipedInputStream pipedInputStream = new PipedInputStream();
+        PipedOutputStream pipedOutputStream = new PipedOutputStream();
+    
+        // Start a thread to read from the process's output and error streams
+        new Thread(() -> {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                 BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+    
+                String line;
+                // Read standard output
+                while ((line = reader.readLine()) != null) {
+                    messageLog.log(line, messageLog.asHighlighted());
+                    pipedOutputStream.write((line + "\n").getBytes());
                 }
-            });
-
-            // Wait for the process to end
-            process.waitFor();
-        } catch (InterruptedException e) {
-            // Orphan process
-        } catch (InvocationTargetException e) {
-            log.log(Level.WARNING, "Unexpected failure", e);
-        }
-
-        log.info("Process ended, re-showing launcher...");
-
-        // Restore the launcher
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                if (consoleFrame != null) {
-                    consoleFrame.setProcess(null);
-                    consoleFrame.requestFocus();
+    
+                // Read error output
+                while ((line = errorReader.readLine()) != null) {
+                    messageLog.log(line, messageLog.asError());
+                    pipedOutputStream.write((line + "\n").getBytes());
+                }
+            } catch (IOException e) {
+                log.warning("Error reading process output: " + e.getMessage());
+            } finally {
+                try {
+                    pipedOutputStream.close();
+                } catch (IOException e) {
+                    log.warning("Error closing piped output stream: " + e.getMessage());
                 }
             }
-        });
-
+        }).start();
+    
+        // Now consume the combined output
+        messageLog.consume(pipedInputStream);
+    
+        // Continue with your existing logic...
         return consoleFrame;
     }
 
