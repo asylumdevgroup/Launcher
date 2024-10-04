@@ -27,6 +27,7 @@ public class BuilderConfigDialog extends JDialog {
     private final JTextField nameText = new JTextField(20);
     private final JTextField titleText = new JTextField(30);
     private final JTextField gameVersionText = new JTextField(10);
+    private final JTextField jvmVersionText = new JTextField(10);
     private final JTextArea launchFlagsArea = new JTextArea(10, 40);
     private final JTextArea userFilesIncludeArea = new JTextArea(15, 40);
     private final JTextArea userFilesExcludeArea = new JTextArea(8, 40);
@@ -56,6 +57,7 @@ public class BuilderConfigDialog extends JDialog {
         nameText.setComponentPopupMenu(TextFieldPopupMenu.INSTANCE);
         titleText.setComponentPopupMenu(TextFieldPopupMenu.INSTANCE);
         gameVersionText.setComponentPopupMenu(TextFieldPopupMenu.INSTANCE);
+        jvmVersionText.setComponentPopupMenu(TextFieldPopupMenu.INSTANCE);
         launchFlagsArea.setComponentPopupMenu(TextFieldPopupMenu.INSTANCE);
         userFilesIncludeArea.setComponentPopupMenu(TextFieldPopupMenu.INSTANCE);
 
@@ -97,6 +99,11 @@ public class BuilderConfigDialog extends JDialog {
                 return;
             }
 
+            if (jvmVersionText.getText().trim().isEmpty()) {
+                SwingHelper.showErrorDialog(BuilderConfigDialog.this, "The 'JVM Version' field must be filled.", "Input Error");
+                return;
+            }
+
             copyTo();
             saved = true;
             dispose();
@@ -121,6 +128,9 @@ public class BuilderConfigDialog extends JDialog {
 
         container.add(new JLabel("Game Version:"));
         container.add(gameVersionText, "span");
+
+        container.add(new JLabel("JVM Version:"));
+        container.add(jvmVersionText, "span");
 
         return container;
     }
@@ -202,6 +212,7 @@ public class BuilderConfigDialog extends JDialog {
         SwingHelper.setTextAndResetCaret(nameText, config.getName());
         SwingHelper.setTextAndResetCaret(titleText, config.getTitle());
         SwingHelper.setTextAndResetCaret(gameVersionText, config.getGameVersion());
+        SwingHelper.setTextAndResetCaret(jvmVersionText, config.getJavaRuntime());
         SwingHelper.setTextAndResetCaret(launchFlagsArea, SwingHelper.listToLines(config.getLaunchModifier().getFlags()));
         SwingHelper.setTextAndResetCaret(userFilesIncludeArea, SwingHelper.listToLines(config.getUserFiles().getInclude()));
         SwingHelper.setTextAndResetCaret(userFilesExcludeArea, SwingHelper.listToLines(config.getUserFiles().getExclude()));
@@ -213,6 +224,7 @@ public class BuilderConfigDialog extends JDialog {
         config.setName(nameText.getText().trim());
         config.setTitle(Strings.emptyToNull(titleText.getText().trim()));
         config.setGameVersion(gameVersionText.getText().trim());
+        config.setJavaRuntime(jvmVersionText.getText().trim());
 
         LaunchModifier launchModifier = config.getLaunchModifier();
         FnPatternList userFiles = config.getUserFiles();

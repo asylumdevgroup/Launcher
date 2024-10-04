@@ -48,6 +48,7 @@ class PackagesHandler extends AbstractHandler {
                 info.setName(manifest.getName());
                 info.setTitle(manifest.getTitle());
                 info.setVersion(manifest.getVersion());
+                info.setJavaRuntime(manifest.getJavaRuntime());
                 info.setLocation(file.getName());
                 packages.add(info);
             }

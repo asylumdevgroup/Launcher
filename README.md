@@ -1,6 +1,20 @@
 SKCraft Launcher
 ================
 
+## About this Fork
+
+This is a fork from [SKCraft Launcher](https://github.com/SKCraft/Launcher) to implement runtime JVM.
+
+This is a PoC and not intended to be upstreamed as-is. A lot of clean-up that I do not have the time / motivation to do as I'm not too familiar with the codebase.
+
+Maintainers of the original are more than welcome to take what they want from this fork.
+
+Made to be used in conjunction with the [Spectrum Bootstrap](https://github.com/Spectrum-MC/launcher-bootstrap)
+
+**Note**: Due to the way it's made, this version drops the support for the end user to use custom JRE. It will ALWAYS take the bundled JRE. I have no use for this feature so I won't implement it.
+
+## Original Readme
+
 ![Now with 1.13+ support!](readme/now_with_support.png)
 
 [![Liberapay](https://liberapay.com/assets/widgets/donate.svg)](https://liberapay.com/offbeatwitch/donate)

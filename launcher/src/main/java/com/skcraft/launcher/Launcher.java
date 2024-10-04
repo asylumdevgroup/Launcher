@@ -356,6 +356,23 @@ public final class Launcher {
         }
     }
 
+
+    /**
+     * Get the Java manifest URL.
+     *
+     * @return the java manifest URL
+     */
+    public URL getJavaManifestURL() {
+        try {
+            String key = Strings.nullToEmpty(getConfig().getGameKey());
+            return HttpRequest.url(
+                    String.format(getProperties().getProperty("javaVersionManifestUrl"),
+                            URLEncoder.encode(key, "UTF-8")));
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /**
      * Convenient method to fetch a property.
      *

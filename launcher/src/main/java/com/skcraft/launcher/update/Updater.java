@@ -6,6 +6,7 @@
 
 package com.skcraft.launcher.update;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.skcraft.concurrency.DefaultProgress;
 import com.skcraft.concurrency.ProgressFilter;
@@ -14,11 +15,17 @@ import com.skcraft.launcher.Instance;
 import com.skcraft.launcher.Launcher;
 import com.skcraft.launcher.LauncherException;
 import com.skcraft.launcher.install.Installer;
+import com.skcraft.launcher.model.java.JavaFile;
+import com.skcraft.launcher.model.java.JavaManifest;
+import com.skcraft.launcher.model.java.JavaVersion;
+import com.skcraft.launcher.model.java.JavaVersionManifest;
 import com.skcraft.launcher.model.minecraft.ReleaseList;
 import com.skcraft.launcher.model.minecraft.Version;
 import com.skcraft.launcher.model.minecraft.VersionManifest;
 import com.skcraft.launcher.model.modpack.Manifest;
 import com.skcraft.launcher.persistence.Persistence;
+import com.skcraft.launcher.util.BundledJava;
+import com.skcraft.launcher.util.Environment;
 import com.skcraft.launcher.util.HttpRequest;
 import com.skcraft.launcher.util.SharedLocale;
 import lombok.Getter;
@@ -29,17 +36,18 @@ import lombok.extern.java.Log;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 import static com.skcraft.launcher.util.HttpRequest.url;
 
 @Log
 public class Updater extends BaseUpdater implements Callable<Instance>, ProgressObservable {
-
     private final ObjectMapper mapper = new ObjectMapper();
     private final Installer installer;
     private final Launcher launcher;
@@ -131,6 +139,26 @@ public class Updater extends BaseUpdater implements Callable<Instance>, Progress
         return version;
     }
 
+    private JavaFile[] readJavaManifest(JavaManifest manifest) throws IOException, InterruptedException {
+        ArrayList<JavaFile> javaFiles = new ArrayList<>();
+
+        URL url = url(manifest.getManifest().getUrl());
+
+        JavaVersionManifest results = HttpRequest.get(url)
+                .execute()
+                .expectResponseCode(200)
+                .returnContent()
+                .asJson(JavaVersionManifest.class);
+
+        for(Map.Entry<String, JavaFile> entry : results.files.entrySet()) {
+            JavaFile jf = entry.getValue();
+            jf.setPath(entry.getKey());
+            javaFiles.add(jf);
+        }
+
+        return javaFiles.toArray(new JavaFile[0]);
+    }
+
     private static VersionManifest fetchVersionManifest(URL url, Manifest manifest) throws IOException, InterruptedException {
         ReleaseList releases = HttpRequest.get(url)
                 .execute()
@@ -144,6 +172,41 @@ public class Updater extends BaseUpdater implements Callable<Instance>, Progress
                 .expectResponseCode(200)
                 .returnContent()
                 .asJson(VersionManifest.class);
+    }
+
+    private static void cleanJvmFiles(JavaFile[] files, File jvmPath) throws IOException {
+        Path basePath = Paths.get(jvmPath.getAbsolutePath());
+
+        List<Path> shouldExist = (new ArrayList<>(Arrays.asList(files))
+                .stream()
+                .map(jf -> basePath.resolve(jf.getPath()))
+                .collect(Collectors.toList())
+        );
+
+        Files.walkFileTree(
+            basePath,
+            new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    if (!shouldExist.contains(file)) {
+                        System.out.println("Removing unwanted JVM file: " + file.toAbsolutePath().toString());
+                        Files.delete(file);
+                    }
+
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                    if (!shouldExist.contains(dir) && !Files.list(dir).findAny().isPresent()) {
+                        System.out.println("Removing unwanted JVM folder: " + dir.toAbsolutePath().toString());
+                        Files.delete(dir);
+                    }
+
+                    return FileVisitResult.CONTINUE;
+                }
+            }
+        );
     }
 
     /**
@@ -173,6 +236,36 @@ public class Updater extends BaseUpdater implements Callable<Instance>, Progress
         VersionManifest version = readVersionManifest(manifest);
 
         progress = new DefaultProgress(-1, SharedLocale.tr("instanceUpdater.buildingDownloadList"));
+
+        // Read Java version manifest
+        log.info("Fetching the Java manifest...");
+        progress = new DefaultProgress(-1, SharedLocale.tr("instanceUpdater.readingJavaVersion"));
+
+        JavaManifest javaManifest = null;
+        for (Map.Entry<String, JavaManifest[]> entry : launcher.getInstances().getJavaVersions().entrySet()) {
+            if (entry.getKey().equalsIgnoreCase(instance.getJavaRuntime())) {
+                if (entry.getValue().length == 0) {
+                    throw new Exception("No valid candidate for Java runtime \"" + instance.getJavaRuntime() + "\"");
+                }
+
+                javaManifest = entry.getValue()[0];
+                break;
+            }
+        }
+        JavaFile[] files = readJavaManifest(javaManifest);
+
+        File jvmDir = BundledJava.getJavaDir(launcher, instance.getJavaRuntime());
+        if (!jvmDir.exists()) {
+            jvmDir.mkdirs();
+        }
+
+        log.info("Cleanup unwanted JVM files...");
+        progress = new DefaultProgress(-1, SharedLocale.tr("instanceUpdater.cleaningJavaFiles"));
+        cleanJvmFiles(files, jvmDir);
+
+        // Validating / downloading the JVM
+        log.info("Installing the correct JVM");
+        installJvm(installer, jvmDir, files);
 
         // Install the .jar
         File jarPath = launcher.getJarPath(version);
@@ -232,6 +325,4 @@ public class Updater extends BaseUpdater implements Callable<Instance>, Progress
     public String getStatus() {
         return progress.getStatus();
     }
-
-
 }

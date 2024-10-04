@@ -21,7 +21,7 @@ dependencies {
 
     implementation 'com.googlecode.plist:dd-plist:1.23'
     implementation 'net.java.dev.jna:jna-platform:5.11.0'
-
+    implementation 'org.json:json:20210307'
     implementation 'com.google.code.gson:gson:2.10.1'
 }
 

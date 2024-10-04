@@ -33,6 +33,7 @@ public class Instance implements Comparable<Instance> {
     private Date lastAccessed;
     @JsonProperty("launch")
     private LaunchModifier launchModifier;
+    private String javaRuntime;
     private InstanceSettings settings = new InstanceSettings();
 
     @JsonIgnore private File dir;
