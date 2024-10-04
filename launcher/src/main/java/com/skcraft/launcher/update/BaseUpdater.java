@@ -16,6 +16,8 @@ import com.skcraft.launcher.LauncherException;
 import com.skcraft.launcher.dialog.FeatureSelectionDialog;
 import com.skcraft.launcher.dialog.ProgressDialog;
 import com.skcraft.launcher.install.*;
+import com.skcraft.launcher.model.java.JavaFile;
+import com.skcraft.launcher.model.java.JavaFileDownload;
 import com.skcraft.launcher.model.loader.LoaderManifest;
 import com.skcraft.launcher.model.loader.LocalLoader;
 import com.skcraft.launcher.model.minecraft.*;
@@ -174,6 +176,59 @@ public abstract class BaseUpdater {
         });
 
         return manifest;
+    }
+
+    protected void installJvm(@NonNull Installer installer,
+                              @NonNull File jvmDir,
+                              @NonNull JavaFile[] files) throws InterruptedException, IOException {
+        for (JavaFile jf : files) {
+            File output = new File(jvmDir, jf.getPath());
+            switch(jf.getType()) {
+                case "file":
+                    checkInterrupted();
+
+                    // Not done: LZMA download
+                    JavaFileDownload raw = jf.getDownloads().getRaw();
+                    if (raw == null) {
+                        throw new InterruptedException("No raw file for " + jf.getPath());
+                    }
+
+                    if (output.exists()) {
+                        // Check SHA1
+                        if (FileUtils.getShaHash(output).equals(raw.getHash())) {
+                            System.out.println("File " + output.getAbsolutePath() + " OK");
+                            break;
+                        }
+                    }
+
+                    File tempFile = installer.getDownloader().download(url(raw.getUrl()), "", raw.getSize(), output.getName());
+                    installer.queue(new FileMover(tempFile, output));
+                    if (raw.getHash() != null) {
+                        installer.queue(new FileVerify(output, output.getName(), raw.getHash()));
+                    }
+
+                    if (jf.isExecutable()) {
+                        installer.queue(new FilePermissions(output));
+                    }
+
+                    log.info("Installing " + output.getName() + " from " + raw.getUrl());
+
+                    break;
+                case "directory":
+                    if (output.isFile()) {
+                        output.delete();
+                    }
+
+                    if (!output.exists()) {
+                        output.mkdirs();
+                    }
+
+                    break;
+                default:
+                    System.out.println("JVM File type not handled: " + jf.getType());
+                    break;
+            }
+        }
     }
 
     protected void installJar(@NonNull Installer installer,

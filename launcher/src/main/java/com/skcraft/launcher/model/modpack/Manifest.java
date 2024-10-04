@@ -92,6 +92,12 @@ public class Manifest extends BaseManifest {
         }
     }
 
+    public void updateJavaRuntime(String jvmVersion) {
+        if (jvmVersion != null) {
+            setJavaRuntime(jvmVersion);
+        }
+    }
+
     public void update(Instance instance) {
         instance.setLaunchModifier(getLaunchModifier());
     }

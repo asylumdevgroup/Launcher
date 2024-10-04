@@ -6,11 +6,15 @@
 
 package com.skcraft.launcher;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.skcraft.concurrency.DefaultProgress;
 import com.skcraft.concurrency.ProgressObservable;
+import com.skcraft.launcher.model.java.JavaManifest;
 import com.skcraft.launcher.model.modpack.ManifestInfo;
 import com.skcraft.launcher.model.modpack.PackageList;
 import com.skcraft.launcher.persistence.Persistence;
+import com.skcraft.launcher.util.Environment;
 import com.skcraft.launcher.util.HttpRequest;
 import com.skcraft.launcher.util.SharedLocale;
 import lombok.Getter;
@@ -22,9 +26,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 import static com.skcraft.launcher.LauncherUtils.concat;
@@ -36,7 +38,11 @@ import static com.skcraft.launcher.LauncherUtils.concat;
 public class InstanceList {
 
     private final Launcher launcher;
-    @Getter private final List<Instance> instances = new ArrayList<Instance>();
+    @Getter
+    private final List<Instance> instances = new ArrayList<Instance>();
+
+    @Getter
+    private HashMap<String, JavaManifest[]> javaVersions = new HashMap<>();
 
     /**
      * Create a new instance list.
@@ -131,6 +137,28 @@ public class InstanceList {
             progress = new DefaultProgress(0.3, SharedLocale.tr("instanceLoader.checkingRemote"));
 
             try {
+                URL javaManifestUrl = launcher.getJavaManifestURL();
+                HashMap<String, HashMap<String, JavaManifest[]>> javaManifests = HttpRequest
+                        .get(javaManifestUrl)
+                        .execute()
+                        .expectResponseCode(200)
+                        .returnContent()
+                        .asJson(new TypeReference<HashMap<String, HashMap<String, JavaManifest[]>>>() {
+                        });
+
+                String currentOs = Environment.getInstance().getMojangOs();
+
+                if (!javaManifests.containsKey(currentOs)) {
+                    throw new Exception("Unable to find a correct Java version for your os/arch: Not available in the manifest");
+                }
+
+                InstanceList.this.javaVersions = javaManifests.get(currentOs);
+                //#endregion
+            } catch (IOException e) {
+                throw new IOException("The Java versions could not be downloaded.", e);
+            }
+
+            try {
                 URL packagesURL = launcher.getPackagesURL();
 
                 PackageList packages = HttpRequest
@@ -153,6 +181,7 @@ public class InstanceList {
 
                             instance.setTitle(manifest.getTitle());
                             instance.setPriority(manifest.getPriority());
+                            instance.setJavaRuntime(manifest.getJavaRuntime());
                             URL url = concat(packagesURL, manifest.getLocation());
                             instance.setManifestURL(url);
 
@@ -177,6 +206,7 @@ public class InstanceList {
                         instance.setName(manifest.getName());
                         instance.setVersion(manifest.getVersion());
                         instance.setPriority(manifest.getPriority());
+                        instance.setJavaRuntime(manifest.getJavaRuntime());
                         instance.setSelected(false);
                         instance.setManifestURL(concat(packagesURL, manifest.getLocation()));
                         instance.setUpdatePending(true);

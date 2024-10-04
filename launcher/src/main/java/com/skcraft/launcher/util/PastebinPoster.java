@@ -11,10 +11,14 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class PastebinPoster {
     private static final int CONNECT_TIMEOUT = 5000;
     private static final int READ_TIMEOUT = 5000;
-    
+    private static final String MCLGS_URL = "https://api.mclo.gs/1/log";
+
     public static void paste(String code, PasteCallback callback) {
         PasteProcessor processor = new PasteProcessor(code, callback);
         Thread thread = new Thread(processor);
@@ -42,7 +46,7 @@ public class PastebinPoster {
             InputStream in = null;
             
             try {
-                URL url = new URL("https://pastebin.com/api/api_post.php");
+                URL url = new URL(MCLGS_URL);
                 conn = (HttpURLConnection) url.openConnection();
                 conn.setConnectTimeout(CONNECT_TIMEOUT);
                 conn.setReadTimeout(READ_TIMEOUT);
@@ -52,43 +56,34 @@ public class PastebinPoster {
                 conn.setDoOutput(true);
                 out = conn.getOutputStream();
                 
-                out.write(("api_option=paste"
-                        + "&api_dev_key=" + URLEncoder.encode("4867eae74c6990dbdef07c543cf8f805", "utf-8")
-                        + "&api_paste_code=" + URLEncoder.encode(code, "utf-8")
-                        + "&api_paste_private=" + URLEncoder.encode("0", "utf-8")
-                        + "&api_paste_name=" + URLEncoder.encode("", "utf-8")
-                        + "&api_paste_expire_date=" + URLEncoder.encode("1D", "utf-8")
-                        + "&api_paste_format=" + URLEncoder.encode("text", "utf-8")
-                        + "&api_user_key=" + URLEncoder.encode("", "utf-8")).getBytes());
+                out.write(("content=" + URLEncoder.encode(code, "utf-8")).getBytes());
                 out.flush();
                 out.close();
                 
                 if (conn.getResponseCode() == 200) {     
                     in = conn.getInputStream();
                     BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-                    String line;
                     StringBuilder response = new StringBuilder();
+                    String line;
                     while ((line = reader.readLine()) != null) {
                         response.append(line);
-                        response.append("\r\n");
                     }
                     reader.close();
                     
-                    String result = response.toString().trim();
-                    
-                    if (result.matches("^https?://.*")) {
-                        callback.handleSuccess(result.trim());
+                    // Handle JSON response
+                    String result = response.toString();
+                    JSONObject jsonResponse = new JSONObject(result);
+                    if (jsonResponse.getBoolean("success")) {
+                        String url2 = jsonResponse.getString("url");
+                        callback.handleSuccess(url2);
                     } else {
-                        String err = result.trim();
-                        if (err.length() > 100) {
-                            err = err.substring(0, 100);
-                        }
-                        callback.handleError(err);
+                        String error = jsonResponse.getString("error");
+                        callback.handleError(error);
                     }
                 } else {
                     callback.handleError("An error occurred while uploading the text.");
                 }
-            } catch (IOException e) {
+            } catch (IOException | JSONException e) {
                 callback.handleError(e.getMessage());
             } finally {
                 if (conn != null) {
