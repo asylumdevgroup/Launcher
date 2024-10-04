@@ -155,18 +155,4 @@ $RECYCLE.BIN/
 /libraries
 /versions
 /accounts.dat
-<<<<<<< HEAD
 /config.json
-=======
-/config.json
-
-ninjay-modpack/_upload
-ninjay-modpack/.modpacks/staging
-
-launch4j-env/staging/jre
-launch4j-env/**/*.exe
-
-.DS_STORE
-
-*.msix
->>>>>>> 9bed6a5 (Add native login for Windows)
