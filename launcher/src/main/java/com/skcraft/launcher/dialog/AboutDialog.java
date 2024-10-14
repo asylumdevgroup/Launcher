@@ -30,8 +30,7 @@ public class AboutDialog extends JDialog {
         container.setLayout(new MigLayout("insets dialog"));
 
         container.add(new JLabel("<html>Licensed under GNU General Public License, version 3."), "wrap, gapbottom unrel");
-        container.add(new JLabel("<html>You are using Astronauts Launcher, an open-source framework<br>" +
-                "for retro modpacks."), "wrap, gapbottom unrel");
+        container.add(new JLabel("<html>You are using the Asylum App"), "wrap, gapbottom unrel");
         JButton okButton = new JButton("OK");
         JButton sourceCodeButton = new JButton("Website");
 
@@ -44,7 +43,7 @@ public class AboutDialog extends JDialog {
         getRootPane().registerKeyboardAction(ActionListeners.dispose(this), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
         okButton.addActionListener(ActionListeners.dispose(this));
-        sourceCodeButton.addActionListener(ActionListeners.openURL(this, "https://github.com/RetroNauts/Launcher"));
+        sourceCodeButton.addActionListener(ActionListeners.openURL(this, "https://github.com/asylumdevgroup/Launcher"));
     }
 
     public static void showAboutDialog(Window parent) {
