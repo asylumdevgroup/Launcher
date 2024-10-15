@@ -49,7 +49,7 @@ public class MinecraftJavaFinder {
 			String platformName = children[0];
 
 			File javaDir = new File(potential, String.format("%s/%s", platformName, runtimeName));
-			if (env.getPlatform() == Platform.MAC_OS_X) {
+			if (env.getPlatform() == Platform.MAC_OS_X || env.getPlatform() == Platform.MAC_OS_X_ARM64) {
 				javaDir = new File(javaDir, "jre.bundle/Contents/Home");
 			}
 

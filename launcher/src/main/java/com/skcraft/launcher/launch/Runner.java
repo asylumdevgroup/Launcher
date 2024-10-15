@@ -194,7 +194,7 @@ public class Runner implements Callable<Process>, ProgressObservable {
      */
     private void addPlatformArgs() {
         // Mac OS X arguments
-        if (getEnvironment().getPlatform() == Platform.MAC_OS_X) {
+        if (getEnvironment().getPlatform() == Platform.MAC_OS_X || getEnvironment().getPlatform() == Platform.MAC_OS_X_ARM64) {
             File icnsPath = assetsIndex.getObjectPath(assetsRoot, "icons/minecraft.icns");
             if (icnsPath != null) {
                 builder.getFlags().add("-Xdock:icon=" + icnsPath.getAbsolutePath());

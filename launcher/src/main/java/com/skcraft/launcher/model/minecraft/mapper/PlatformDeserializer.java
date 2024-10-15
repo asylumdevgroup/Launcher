@@ -21,12 +21,18 @@ public class PlatformDeserializer extends JsonDeserializer<Platform> {
         String text = jsonParser.getText();
         if (text.equalsIgnoreCase("windows")) {
             return Platform.WINDOWS;
+        } else if (text.equalsIgnoreCase("windows-arm64")) {
+            return Platform.WINDOWS_ARM64;
         } else if (text.equalsIgnoreCase("linux")) {
             return Platform.LINUX;
+        } else if (text.equalsIgnoreCase("linux-arm64")) {
+            return Platform.LINUX_ARM64;
         } else if (text.equalsIgnoreCase("solaris")) {
             return Platform.SOLARIS;
         } else if (text.equalsIgnoreCase("osx")) {
             return Platform.MAC_OS_X;
+        } else if (text.equalsIgnoreCase("osx-arm64")) {
+            return Platform.MAC_OS_X_ARM64;        
         } else {
             throw new IOException("Unknown platform: " + text);
         }

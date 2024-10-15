@@ -122,7 +122,7 @@ public final class SwingHelper {
         try {
             Desktop.getDesktop().browse(url);
         } catch (UnsupportedOperationException e) {
-            if (Environment.detectPlatform() == Platform.LINUX) {
+            if (Environment.detectPlatform() == Platform.LINUX || Environment.detectPlatform() == Platform.LINUX_ARM64) {
                 // Try xdg-open instead
                 Runtime.getRuntime().exec(new String[]{"xdg-open", url.toString()});
             }

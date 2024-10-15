@@ -50,13 +50,13 @@ public class Environment {
     public static Platform detectPlatform() {
         String osName = System.getProperty("os.name").toLowerCase();
         if (osName.contains("win"))
-            return Platform.WINDOWS;
+            return System.getProperty("os.arch").contains("aarch64") ? Platform.WINDOWS_ARM64 : Platform.WINDOWS;
         if (osName.contains("mac"))
-            return Platform.MAC_OS_X;
+            return System.getProperty("os.arch").contains("aarch64") ? Platform.MAC_OS_X_ARM64 : Platform.MAC_OS_X;
         if (osName.contains("solaris") || osName.contains("sunos"))
             return Platform.SOLARIS;
         if (osName.contains("linux"))
-            return Platform.LINUX;
+            return System.getProperty("os.arch").contains("aarch64") ? Platform.LINUX_ARM64 : Platform.LINUX;
         if (osName.contains("unix"))
             return Platform.LINUX;
         if (osName.contains("bsd"))
