@@ -15,9 +15,11 @@ import lombok.extern.java.Log;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 import static com.skcraft.launcher.LauncherUtils.checkInterrupted;
 import static com.skcraft.launcher.util.SharedLocale.tr;
@@ -25,11 +27,12 @@ import static com.skcraft.launcher.util.SharedLocale.tr;
 @Log
 public class Installer implements ProgressObservable {
 
-    @Getter private final File tempDir;
+    @Getter
+    private final File tempDir;
     private final HttpDownloader downloader;
 
-    private TaskQueue mainQueue = new TaskQueue();
-    private TaskQueue lateQueue = new TaskQueue();
+    private final TaskQueue mainQueue = new TaskQueue();
+    private final TaskQueue lateQueue = new TaskQueue();
 
     private transient TaskQueue activeQueue;
 
@@ -38,11 +41,11 @@ public class Installer implements ProgressObservable {
         this.downloader = new HttpDownloader(tempDir);
     }
 
-    public synchronized void queue(@NonNull InstallTask runnable) {
+    public void queue(@NonNull InstallTask runnable) {
         mainQueue.queue(runnable);
     }
 
-    public synchronized void queueLate(@NonNull InstallTask runnable) {
+    public void queueLate(@NonNull InstallTask runnable) {
         lateQueue.queue(runnable);
     }
 
@@ -50,13 +53,13 @@ public class Installer implements ProgressObservable {
         downloader.execute();
     }
 
-    public synchronized void execute(Launcher launcher) throws Exception {
+    public void execute(Launcher launcher) throws Exception {
         activeQueue = mainQueue;
         mainQueue.execute(launcher);
         activeQueue = null;
     }
 
-    public synchronized void executeLate(Launcher launcher) throws Exception {
+    public void executeLate(Launcher launcher) throws Exception {
         activeQueue = lateQueue;
         lateQueue.execute(launcher);
         activeQueue = null;
@@ -69,49 +72,67 @@ public class Installer implements ProgressObservable {
     @Override
     public double getProgress() {
         if (activeQueue == null) return 0.0;
-
-        return activeQueue.finished / (double) activeQueue.count;
+        return activeQueue.getFinished() / (double) activeQueue.getCount();
     }
 
     @Override
     public String getStatus() {
-        if (activeQueue != null && activeQueue.running != null) {
-            InstallTask running = activeQueue.running;
+        if (activeQueue != null && activeQueue.getRunning() != null) {
+            InstallTask running = activeQueue.getRunning();
             String status = running.getStatus();
             if (status == null) {
                 status = running.toString();
             }
-            return tr("installer.executing", activeQueue.count - activeQueue.finished) + "\n" + status;
+            return tr("installer.executing", activeQueue.getCount() - activeQueue.getFinished()) + "\n" + status;
         } else {
             return SharedLocale.tr("installer.installing");
         }
     }
 
     public static class TaskQueue {
-        private List<InstallTask> queue = new ArrayList<InstallTask>();
+        private final ConcurrentLinkedQueue<InstallTask> queue = new ConcurrentLinkedQueue<>();
+        private final AtomicInteger count = new AtomicInteger(0);
+        private final AtomicInteger finished = new AtomicInteger(0);
+        private final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        @Getter
+        private volatile InstallTask running;
 
-        private int count = 0;
-        private int finished = 0;
-        private InstallTask running;
-
-        public synchronized void queue(@NonNull InstallTask runnable) {
+        public void queue(@NonNull InstallTask runnable) {
             queue.add(runnable);
-            count++;
+            count.incrementAndGet();
         }
 
-        public synchronized void execute(Launcher launcher) throws Exception {
-            queue = Collections.unmodifiableList(queue);
-
+        public void execute(Launcher launcher) throws Exception {
             try {
                 for (InstallTask runnable : queue) {
                     checkInterrupted();
                     running = runnable;
-                    runnable.execute(launcher);
-                    finished++;
+                    executor.submit(() -> {
+                        try {
+                            runnable.execute(launcher);
+                        } catch (Exception e) {
+                            log.log(Level.SEVERE, "Failed to execute task: " + runnable, e);
+                        }
+                        finished.incrementAndGet();
+                    });
+                }
+                executor.shutdown();
+                while (!executor.isTerminated()) {
+                    checkInterrupted();
+                    Thread.sleep(100);
                 }
             } finally {
                 running = null;
             }
         }
+
+        public int getCount() {
+            return count.get();
+        }
+
+        public int getFinished() {
+            return finished.get();
+        }
+
     }
 }

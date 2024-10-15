@@ -18,7 +18,12 @@ import lombok.extern.java.Log;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 import static com.skcraft.launcher.util.SharedLocale.tr;
@@ -101,33 +106,49 @@ public class AssetsRoot {
         public File build() throws IOException, LauncherException {
             AssetsRoot.log.info("Building asset virtual tree at '" + destDir.getAbsolutePath() + "'...");
 
-            boolean supportsLinks = true;
+            AtomicBoolean supportsLinks = new AtomicBoolean(true);
+            int threadCount = Runtime.getRuntime().availableProcessors();
+            ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+
             for (Map.Entry<String, Asset> entry : index.getObjects().entrySet()) {
-                File objectPath = getObjectPath(entry.getValue());
-                File virtualPath = new File(destDir, entry.getKey());
-                virtualPath.getParentFile().mkdirs();
-                if (!virtualPath.exists()) {
-                    log.log(Level.INFO, "Copying {0} to {1}...", new Object[] {
-                            objectPath.getAbsolutePath(), virtualPath.getAbsolutePath()});
+                executor.submit(() -> {
+                    try {
+                        File objectPath = getObjectPath(entry.getValue());
+                        File virtualPath = new File(destDir, entry.getKey());
+                        virtualPath.getParentFile().mkdirs();
+                        if (!virtualPath.exists()) {
+                            log.log(Level.INFO, "Copying {0} to {1}...", new Object[]{
+                                    objectPath.getAbsolutePath(), virtualPath.getAbsolutePath()});
 
-                    if (!objectPath.exists()) {
-                        String message = tr("assets.missingObject", objectPath.getAbsolutePath());
-                        throw new LauncherException("Missing object " + objectPath.getAbsolutePath(), message);
-                    }
+                            if (!objectPath.exists()) {
+                                String message = tr("assets.missingObject", objectPath.getAbsolutePath());
+                                throw new LauncherException("Missing object " + objectPath.getAbsolutePath(), message);
+                            }
 
-                    if (supportsLinks) {
-                        try {
-                            Files.createLink(virtualPath.toPath(), objectPath.toPath());
-                        } catch (UnsupportedOperationException e) {
-                            supportsLinks = false;
+                            if (supportsLinks.get()) {
+                                try {
+                                    Files.createLink(virtualPath.toPath(), objectPath.toPath());
+                                } catch (UnsupportedOperationException e) {
+                                    supportsLinks.set(false);
+                                }
+                            }
+
+                            if (!supportsLinks.get()) {
+                                Files.copy(objectPath.toPath(), virtualPath.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                            }
                         }
+                        processed++;
+                    } catch (IOException | LauncherException e) {
+                        e.printStackTrace();
                     }
+                });
+            }
 
-                    if (!supportsLinks) {
-                        Files.copy(objectPath.toPath(), virtualPath.toPath());
-                    }
-                }
-                processed++;
+            executor.shutdown();
+            try {
+                executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
 
             return destDir;
