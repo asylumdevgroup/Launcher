@@ -5,7 +5,8 @@
  */
 
 package com.skcraft.launcher;
-
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.skcraft.concurrency.DefaultProgress;
 import com.skcraft.concurrency.ProgressObservable;
 import com.skcraft.launcher.model.modpack.PackageList;
@@ -16,7 +17,9 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.java.Log;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
-
+import com.skcraft.launcher.model.java.JavaManifest;
+import com.skcraft.launcher.model.modpack.ManifestInfo;
+import com.skcraft.launcher.util.Environment;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -28,6 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
+import java.util.HashMap;
 
 import static com.skcraft.launcher.LauncherUtils.concat;
 
@@ -40,6 +44,10 @@ public class InstanceList {
     private final Launcher launcher;
     @Getter
     private final List<Instance> instances = new ArrayList<Instance>();
+
+    @Getter
+    private HashMap<String, JavaManifest[]> javaVersions = new HashMap<>();
+
 
     /**
      * Create a new instance list.
